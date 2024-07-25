@@ -24,8 +24,7 @@ var Queue = /** @class */ (function () {
         var head = this.head;
         this.head = this.head.next;
         // free the memory
-        // head.next = undefined;
-        console.log("head.next -", head);
+        head.next = undefined;
         return head.value;
     };
     Queue.prototype.peek = function () {
