@@ -1,7 +1,7 @@
 class arrayRingBuffer {
   private front: number;
   private back: number;
-  private arr: number | undefined[];
+  private arr: (number | undefined)[];
   private capacity: number;
 
   constructor(arrLength: number) {
@@ -27,9 +27,9 @@ class arrayRingBuffer {
     return { error: "QUEUE FULL", data: null };
   }
 
-  deque(): { data: number | null; error: string | null } {
+  deque(): { data: number | null | undefined; error: string | null } {
     if (this.arr[this.front]) {
-      const poppedItem: number = this.arr[this.front];
+      const poppedItem: number | undefined = this.arr[this.front];
 
       this.arr[this.front] = undefined;
       this.front++;
@@ -46,7 +46,7 @@ class arrayRingBuffer {
 
   display(): {
     error: null;
-    data: { front: number; back: number; arr: number | undefined[] };
+    data: { front: number; back: number; arr: (number | undefined)[] };
   } {
     return {
       error: null,
@@ -94,7 +94,6 @@ console.log(newArr.deque());
 console.log(newArr.display());
 console.log(newArr.deque());
 console.log(newArr.display());
-
 console.log(newArr.enqueue(25));
 console.log(newArr.display());
 console.log(newArr.enqueue(26));
