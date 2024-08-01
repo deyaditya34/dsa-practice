@@ -1,4 +1,4 @@
-class LeafyBucket {
+class TokenBucket {
   private front: number;
   private back: number;
   private arr: (number | undefined)[];
@@ -6,11 +6,12 @@ class LeafyBucket {
   private leakRate: number;
   private tempBufferSize: number;
   private tempLeakRate: number;
+  private token: number;
 
   constructor(
     arrBuffSize: number,
     leakRate: number,
-    sendPacketInSeconds: number
+    tokenAddTimeInSeconds: number
   ) {
     this.arr = new Array();
     this.bufferSize = arrBuffSize;
@@ -19,27 +20,29 @@ class LeafyBucket {
     this.back = 0;
     this.tempBufferSize = 0;
     this.tempLeakRate = leakRate;
+    this.token = 0;
+
+    setInterval(this.addToken, tokenAddTimeInSeconds * 1000);
 
     process.stdin.resume();
-    process.stdin.setEncoding("utf8");
+
+    process.stdin.setEncoding("utf-8");
 
     process.stdin.on("data", (data) => {
-      const item: number = Number(data.toString().trim());
-      if (isNaN(item)) {
-        console.log("invalid input. Please enter a number");
+      const input = data.toString().trim();
+
+      if (input === "dequeue") {
+        // const dequeueItem = this.dequeue();
+        // process.stdout.write(dequeueItem);
       } else {
-        this.enqueue(item);
       }
     });
-
-    setInterval(() => {
-      console.log(this.dequeue(), this.displayQueue());
-    }, sendPacketInSeconds * 1000);
   }
 
   enqueue(item: number): string {
     if (this.tempBufferSize < this.bufferSize) {
       this.tempBufferSize += item;
+      this.token++;
 
       if (this.tempBufferSize <= this.bufferSize) {
         this.arr[this.front] = item;
@@ -59,32 +62,45 @@ class LeafyBucket {
     return "QUEUE FULL.";
   }
 
-  dequeue(): string | number | undefined {
-    const currentTraffic: number | undefined = this.arr[this.back];
+  dequeue(): string | number {
+    const traffic: number = this.arr[this.back];
+    let result : string | number;
 
-    if (!currentTraffic) {
+    if (this.token < 1) {
+      result = "TOKEN_EMPTY"
+    }
+
+    else if (!traffic) {
       this.front = 0;
       this.back = 0;
       this.arr = [];
-      return "QUEUE_EMPTY";
+      result =  "QUEUE_EMPTY";
     }
 
-    if (this.tempLeakRate >= currentTraffic) {
-      this.arr[this.back] = undefined;
+    else if (this.tempLeakRate >= traffic) {
+      this.arr[this.back] = 0;
       this.back++;
-      this.tempBufferSize -= currentTraffic;
-      this.tempLeakRate -= currentTraffic;
-      return currentTraffic;
+      this.token--;
+      this.tempBufferSize -= traffic;
+      this.tempLeakRate -= traffic;
+      result =  traffic;
     }
 
-    if (this.tempLeakRate < currentTraffic) {
-      const remainingPacket = currentTraffic - this.tempLeakRate;
+    else (this.tempLeakRate < traffic) {
+      const remainingPacket = traffic - this.tempLeakRate;
 
+      this.token--;
       this.tempBufferSize -= this.tempLeakRate;
       this.arr[this.back] = remainingPacket;
       this.tempLeakRate = this.leakRate;
-      return this.tempLeakRate;
+      result =  this.tempLeakRate;
     }
+
+    return result;
+  }
+
+  private addToken() {
+    this.token++;
   }
 
   displayQueue() {
@@ -97,7 +113,7 @@ class LeafyBucket {
   }
 }
 
-const newBucket = new LeafyBucket(1000, 600, 5);
+const newTokenBucket = new TokenBucket(1000, 50, 5);
 
 // console.log(newBucket.displayQueue());
 // console.log(newBucket.receivePacket(500));
@@ -127,3 +143,6 @@ const newBucket = new LeafyBucket(1000, 600, 5);
 
 // console.log(newBucket.sendPacket());
 // console.log(newBucket.displayQueue());
+
+newTokenBucket.enqueue(100);
+newTokenBucket.enqueue(100);
