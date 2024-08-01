@@ -9,20 +9,26 @@ var TokenBucket = /** @class */ (function () {
         this.tempBufferSize = 0;
         this.tempLeakRate = leakRate;
         this.token = 0;
-        setInterval(this.addToken, tokenAddTimeInSeconds * 1000);
+        setInterval(function () {
+            _this.addToken(), console.log(_this.displayQueue());
+        }, tokenAddTimeInSeconds * 1000);
         process.stdin.resume();
         process.stdin.setEncoding("utf-8");
+        process.stdout.write("PLEASE TYPE 'DEQUEUE' TO DEQUEUE A ITEM");
         process.stdin.on("data", function (data) {
             var input = data.toString().trim();
             if (input === "dequeue") {
-                console.log(_this.dequeue());
+                var dequeueItem = _this.dequeue();
+                console.log(dequeueItem);
+            }
+            else {
+                process.stdout.write("INVALID_COMMAND");
             }
         });
     }
     TokenBucket.prototype.enqueue = function (item) {
         if (this.tempBufferSize < this.bufferSize) {
             this.tempBufferSize += item;
-            this.token++;
             if (this.tempBufferSize <= this.bufferSize) {
                 this.arr[this.front] = item;
                 this.front++;
@@ -35,32 +41,34 @@ var TokenBucket = /** @class */ (function () {
         return "QUEUE FULL.";
     };
     TokenBucket.prototype.dequeue = function () {
-        var currentTraffic = this.arr[this.back];
+        var traffic = this.arr[this.back];
+        var result;
         if (this.token < 1) {
-            return "TOKEN_EMPTY";
+            result = "TOKEN_EMPTY";
         }
-        if (!currentTraffic) {
+        else if (!traffic) {
             this.front = 0;
             this.back = 0;
             this.arr = [];
-            return "QUEUE_EMPTY";
+            result = "QUEUE_EMPTY";
         }
-        if (this.tempLeakRate >= currentTraffic) {
-            this.arr[this.back] = undefined;
+        else if (this.tempLeakRate >= traffic) {
+            this.arr[this.back] = 0;
             this.back++;
             this.token--;
-            this.tempBufferSize -= currentTraffic;
-            this.tempLeakRate -= currentTraffic;
-            return currentTraffic;
+            this.tempBufferSize -= traffic;
+            this.tempLeakRate -= traffic;
+            result = traffic;
         }
-        if (this.tempLeakRate < currentTraffic) {
-            var remainingPacket = currentTraffic - this.tempLeakRate;
+        else {
+            var remainingPacket = traffic - this.tempLeakRate;
             this.token--;
             this.tempBufferSize -= this.tempLeakRate;
             this.arr[this.back] = remainingPacket;
             this.tempLeakRate = this.leakRate;
-            return this.tempLeakRate;
+            result = this.tempLeakRate;
         }
+        return result;
     };
     TokenBucket.prototype.addToken = function () {
         this.token++;
@@ -71,31 +79,11 @@ var TokenBucket = /** @class */ (function () {
             front: this.front,
             back: this.back,
             leakRate: this.tempLeakRate,
+            token: this.token,
         };
     };
     return TokenBucket;
 }());
 var newTokenBucket = new TokenBucket(1000, 50, 5);
-// console.log(newBucket.displayQueue());
-// console.log(newBucket.receivePacket(500));
-// console.log(newBucket.displayQueue());
-// console.log(newBucket.receivePacket(400));
-// console.log(newBucket.displayQueue());
-// console.log(newBucket.receivePacket(500));
-// console.log(newBucket.displayQueue());
-// console.log(newBucket.sendPacket());
-// console.log(newBucket.displayQueue());
-// console.log(newBucket.sendPacket());
-// console.log(newBucket.displayQueue());
-// console.log(newBucket.sendPacket());
-// console.log(newBucket.displayQueue());
-// console.log(newBucket.sendPacket());
-// console.log(newBucket.displayQueue());
-// console.log(newBucket.sendPacket());
-// console.log(newBucket.displayQueue());
-// console.log(newBucket.receivePacket(500));
-// console.log(newBucket.displayQueue());
-// console.log(newBucket.sendPacket());
-// console.log(newBucket.displayQueue());
 newTokenBucket.enqueue(100);
 newTokenBucket.enqueue(100);
