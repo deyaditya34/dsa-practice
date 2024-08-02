@@ -9,21 +9,37 @@ var TokenBucket = /** @class */ (function () {
         this.tempBufferSize = 0;
         this.tempLeakRate = leakRate;
         this.token = 0;
-        setInterval(function () {
-            _this.addToken(), console.log(_this.displayQueue());
-        }, tokenAddTimeInSeconds * 1000);
+        setInterval(function () { return _this.addToken(); }, tokenAddTimeInSeconds * 1000);
         process.stdin.resume();
         process.stdin.setEncoding("utf-8");
-        process.stdout.write("PLEASE TYPE 'DEQUEUE' TO DEQUEUE A ITEM");
+        process.stdout.write("PLEASE TYPE 'enqueue <item>' TO ENQUEUE A ITEM" + "\n");
+        process.stdout.write("PLEASE TYPE 'dequeue' TO DEQUEUE A ITEM" + "\n");
+        process.stdout.write("PLEASE TYPE 'display' TO DISPLAY THE QUEUE DETAILS");
         process.stdin.on("data", function (data) {
-            var input = data.toString().trim();
-            if (input === "dequeue") {
-                var dequeueItem = _this.dequeue();
-                console.log(dequeueItem);
+            var inputData = data.toString().trim();
+            var indexOfSpaceFromInputData = inputData.lastIndexOf(" ");
+            if (indexOfSpaceFromInputData === -1) {
+                if (inputData === "dequeue") {
+                    var dequeueItem = _this.dequeue();
+                    console.log(dequeueItem);
+                    return;
+                }
+                if (inputData === "display") {
+                    console.log(_this.displayQueue());
+                    return;
+                }
             }
             else {
-                process.stdout.write("INVALID_COMMAND");
+                var inputItem = inputData.slice(indexOfSpaceFromInputData, inputData.length);
+                if (!isNaN(Number(inputItem))) {
+                    var inputCommand = inputData.slice(0, indexOfSpaceFromInputData);
+                    if (inputCommand === "enqueue") {
+                        console.log(_this.enqueue(Number(inputItem)));
+                    }
+                    return;
+                }
             }
+            process.stdout.write("INVALID_COMMAND");
         });
     }
     TokenBucket.prototype.enqueue = function (item) {
@@ -32,13 +48,13 @@ var TokenBucket = /** @class */ (function () {
             if (this.tempBufferSize <= this.bufferSize) {
                 this.arr[this.front] = item;
                 this.front++;
-                return "ITEM_INSERTED";
+                return "ITEM_INSERTED - ".concat(item);
             }
             var toBeSavedPackets = this.bufferSize + item - this.tempBufferSize;
             this.arr[this.front] = toBeSavedPackets;
-            return "ITEM INSERTED";
+            return "ITEM INSERTED - ".concat(toBeSavedPackets);
         }
-        return "QUEUE FULL.";
+        return "QUEUE FULL";
     };
     TokenBucket.prototype.dequeue = function () {
         var traffic = this.arr[this.back];
@@ -85,5 +101,3 @@ var TokenBucket = /** @class */ (function () {
     return TokenBucket;
 }());
 var newTokenBucket = new TokenBucket(1000, 50, 5);
-newTokenBucket.enqueue(100);
-newTokenBucket.enqueue(100);

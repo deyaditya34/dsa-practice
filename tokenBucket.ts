@@ -22,25 +22,55 @@ class TokenBucket {
     this.tempLeakRate = leakRate;
     this.token = 0;
 
-    setInterval(() => {
-      this.addToken(), console.log(this.displayQueue());
-    }, tokenAddTimeInSeconds * 1000);
+    setInterval(() => this.addToken(), tokenAddTimeInSeconds * 1000);
 
     process.stdin.resume();
 
     process.stdin.setEncoding("utf-8");
 
-    process.stdout.write("PLEASE TYPE 'DEQUEUE' TO DEQUEUE A ITEM");
+    process.stdout.write(
+      "PLEASE TYPE 'enqueue <item>' TO ENQUEUE A ITEM" + "\n"
+    );
+    process.stdout.write("PLEASE TYPE 'dequeue' TO DEQUEUE A ITEM" + "\n");
+
+    process.stdout.write("PLEASE TYPE 'display' TO DISPLAY THE QUEUE DETAILS");
 
     process.stdin.on("data", (data) => {
-      const input = data.toString().trim();
+      const inputData = data.toString().trim();
 
-      if (input === "dequeue") {
-        const dequeueItem: string | number = this.dequeue();
-        console.log(dequeueItem);
+      const indexOfSpaceFromInputData = inputData.lastIndexOf(" ");
+
+      if (indexOfSpaceFromInputData === -1) {
+        if (inputData === "dequeue") {
+          const dequeueItem: string | number = this.dequeue();
+          console.log(dequeueItem);
+
+          return;
+        }
+
+        if (inputData === "display") {
+          console.log(this.displayQueue());
+
+          return;
+        }
       } else {
-        process.stdout.write("INVALID_COMMAND");
+        const inputItem = inputData.slice(
+          indexOfSpaceFromInputData,
+          inputData.length
+        );
+
+        if (!isNaN(Number(inputItem))) {
+          const inputCommand = inputData.slice(0, indexOfSpaceFromInputData);
+
+          if (inputCommand === "enqueue") {
+            console.log(this.enqueue(Number(inputItem)));
+          }
+
+          return;
+        }
       }
+
+      process.stdout.write("INVALID_COMMAND");
     });
   }
 
@@ -52,7 +82,7 @@ class TokenBucket {
         this.arr[this.front] = item;
         this.front++;
 
-        return "ITEM_INSERTED";
+        return `ITEM_INSERTED - ${item}`;
       }
 
       const toBeSavedPackets: number =
@@ -60,10 +90,10 @@ class TokenBucket {
 
       this.arr[this.front] = toBeSavedPackets;
 
-      return "ITEM INSERTED";
+      return `ITEM INSERTED - ${toBeSavedPackets}`;
     }
 
-    return "QUEUE FULL.";
+    return "QUEUE FULL";
   }
 
   dequeue(): string | number {
@@ -113,6 +143,3 @@ class TokenBucket {
 }
 
 const newTokenBucket = new TokenBucket(1000, 50, 5);
-
-newTokenBucket.enqueue(100);
-newTokenBucket.enqueue(100);
